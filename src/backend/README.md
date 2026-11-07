@@ -1,5 +1,35 @@
 # The Backend Code Folder
 
+## Development handoff connection test
+
+`handoff.web.js` exports the visitor-callable `exchangeHandoffToken(token)` connection test using `Permissions.Anyone`. It creates no members or sessions and assigns no roles. Success returns only `{ authorized: true }` and does not grant access to private Support Hub pages; failures from the handler return `Handoff failed` without PHP response details.
+
+Prerequisites:
+
+- An authenticated Wix site administrator with access to the Local Editor for Editor-based testing. This Editor access is separate from the web method's `Permissions.Anyone` permission, which allows ordinary visitors to invoke it. This checkout has no installed dependencies; install the existing dependencies with `npm install`, then use `npm run dev`. Do not publish or push this branch.
+- A publicly reachable development PHP API with a valid HTTPS certificate. Localhost and a private local PHP server cannot be reached by Wix's hosted backend.
+- In the development site's Secrets Manager, `ErepioApiUrl` must hold the development HTTPS base URL and `ErepioHandoffSecret` must match that development API. Do not repoint production secrets. Set `ErepioHandoffTestEnabled` to the exact string `true` only in the development environment. Missing or disabled configuration fails closed. `HubAccessRoleId` is not used.
+- Disposable tokens from the existing PHP development handoff flow: a fresh unused token and a separate expired, unused token. The actual URL, configured secrets, tokens, and expiry duration are not available in this repository.
+
+In Wix Studio or Wix Editor, open the locally synced `backend/handoff.web.js` and use functional testing for `exchangeHandoffToken`. Supply its `token` parameter privately. Wix supports functional testing of exported `.web.js` functions and describes its execution as equivalent to Preview. This capability has not yet been verified on this site.
+
+Run these cases in order:
+
+| Input | Expected result |
+| --- | --- |
+| Fresh unused development token | `{ "authorized": true }` |
+| The same token again | `Handoff failed` |
+| A fabricated token of at least 20 characters | `Handoff failed` |
+| A separate unused token after its PHP expiry | `Handoff failed` |
+
+Use a sufficiently long invalid token so the invalid-token case reaches PHP instead of only testing local input validation. The fresh-token success is also the check that Wix can reach the configured HTTPS exchange endpoint. Rejection results are meaningful only after that success establishes working configuration. Do not retry the fresh token expecting another success: exchange consumes it.
+
+The request contract remains `POST /api/support-hub/wix/handoff/exchange`, header `X-Wix-Handoff-Secret`, and JSON body `{ token }`. Success requires the existing response fields `authorized: true` and a valid `user.email`; neither email nor PHP response data is returned.
+
+Wix functional testing displays its call arguments. Use disposable development tokens only; do not share or retain raw test output containing them. The backend itself does not log tokens, secrets, or response details. Disable the test flag after testing.
+
+Live test status: not run. Development HTTPS reachability and all four real token outcomes remain unverified until the prerequisites above are available. This tests only the backend connection; private-page authorization must be enforced independently.
+
 This folder contains the backend code files for your site. These files correspond to the ones found in the [**Backend**](https://support.wix.com/en/article/velo-working-with-the-velo-sidebar#backend) section of the **Public & Backend** 
 ![image](https://user-images.githubusercontent.com/89579857/184862813-e55cdd98-b723-4d64-b73c-593eb9af21c7.png) tab in the Velo sidebar. Add the following files to this folder to include them in your site:
 + [**Web Modules:**](https://support.wix.com/en/article/velo-web-modules-calling-backend-code-from-the-frontend)  
