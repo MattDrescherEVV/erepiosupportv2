@@ -1,5 +1,6 @@
 import { Permissions, webMethod } from 'wix-web-module';
 import { secrets } from 'wix-secrets-backend.v2';
+import { authentication } from 'wix-members-backend';
 import { elevate } from 'wix-auth';
 import { fetch } from 'wix-fetch';
 
@@ -52,7 +53,9 @@ export const exchangeHandoffToken = webMethod(Permissions.Anyone, async (token) 
       throw handoffFailed();
     }
 
-    return { authorized: true };
+    const sessionToken = await authentication.generateSessionToken(email);
+
+    return { sessionToken };
   } catch (error) {
     throw handoffFailed();
   }
