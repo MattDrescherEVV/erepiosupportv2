@@ -1,5 +1,7 @@
 import wixData from 'wix-data';
-import { authorization, authentication, members } from 'wix-members-backend';
+import { authorization, authentication } from 'wix-members-backend';
+import { members } from 'wix-members.v2';
+import { elevate } from 'wix-auth';
 
 // Wix member role "Erepio Hub Access" (Contacts > Site Member Access > Role ID).
 // Every Hub page is restricted to this role; only a verified Erepio handoff assigns it.
@@ -13,6 +15,7 @@ export const GRANTS_COLLECTION = 'HubAccessGrants';
 export const GRANT_TTL_MINUTES = 60;
 
 const AUTH = { suppressAuth: true };
+const elevatedQueryMembers = elevate(members.queryMembers);
 
 // Runs one grant step and rethrows a fixed reason code if it fails.
 // Logs the step code plus Wix's error code/name only: never the email or tokens.
@@ -27,10 +30,10 @@ async function step(code, fn) {
 }
 
 async function findMemberByEmail(email) {
-  const result = await members.queryMembers()
+  const result = await elevatedQueryMembers()
     .eq('loginEmail', email)
     .limit(1)
-    .find(AUTH);
+    .find();
   return result.items.length ? result.items[0] : null;
 }
 
@@ -49,7 +52,13 @@ export async function grantHubAccess(email) {
   if (!member) {
     // First visit: generateSessionToken creates the member with a random password.
     await step('grant_create_member_failed', () => authentication.generateSessionToken(email));
-    member = await step('member_lookup_failed', () => findMemberByEmail(email));
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      member = await step('member_lookup_failed', () => findMemberByEmail(email));
+      if (member && member._id) {
+        break;
+      }
+    }
   }
 
   if (!member || !member._id) {
