@@ -14,6 +14,18 @@ export const GRANT_TTL_MINUTES = 60;
 
 const AUTH = { suppressAuth: true };
 
+// Runs one grant step and rethrows a fixed reason code if it fails.
+// Logs the step code plus Wix's error code/name only: never the email or tokens.
+async function step(code, fn) {
+  try {
+    return await fn();
+  } catch (error) {
+    const detail = error && (error.code || error.name) ? String(error.code || error.name) : 'unknown';
+    console.error('Grant step failed:', code, detail);
+    throw new Error(code);
+  }
+}
+
 async function findMemberByEmail(email) {
   const result = await members.queryMembers()
     .eq('loginEmail', email)
@@ -26,35 +38,43 @@ async function findMemberByEmail(email) {
  * Logs the verified Erepio user in to Wix and grants the Hub role.
  * Only called after Erepio PHP has confirmed the handoff token.
  * Returns a Wix session token for applySessionToken().
+ *
+ * Order matters: the member must exist, be approved and hold the Hub role
+ * BEFORE the session token is generated, so the session the browser receives
+ * already has access to Support Home.
  */
 export async function grantHubAccess(email) {
-  // Creates the member (random password) if this email has never been seen.
-  let sessionToken = await authentication.generateSessionToken(email);
+  let member = await step('member_lookup_failed', () => findMemberByEmail(email));
 
-  const member = await findMemberByEmail(email);
+  if (!member) {
+    // First visit: generateSessionToken creates the member with a random password.
+    await step('grant_create_member_failed', () => authentication.generateSessionToken(email));
+    member = await step('member_lookup_failed', () => findMemberByEmail(email));
+  }
+
   if (!member || !member._id) {
-    throw new Error('Member lookup failed');
+    throw new Error('member_lookup_failed');
   }
 
   if (member.status === 'BLOCKED') {
-    throw new Error('Member blocked');
+    throw new Error('member_blocked');
   }
 
   // Site signup requires manual approval, so a first-time member starts PENDING.
   // A verified Erepio handoff is the approval.
   if (member.status === 'PENDING' || member.status === 'APPLICANT') {
-    sessionToken = await authentication.approveByEmail(email);
+    await step('grant_approve_failed', () => authentication.approveByEmail(email));
   }
 
-  await authorization.assignRole(HUB_ROLE_ID, member._id, AUTH);
+  await step('grant_assign_role_failed', () => authorization.assignRole(HUB_ROLE_ID, member._id, AUTH));
 
-  await wixData.save(GRANTS_COLLECTION, {
+  await step('grant_record_failed', () => wixData.save(GRANTS_COLLECTION, {
     _id: member._id,
     memberId: member._id,
     grantedAt: new Date()
-  }, AUTH);
+  }, AUTH));
 
-  return sessionToken;
+  return step('grant_session_token_failed', () => authentication.generateSessionToken(email));
 }
 
 /**
