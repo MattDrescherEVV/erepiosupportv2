@@ -1,6 +1,6 @@
 import wixLocationFrontend from 'wix-location-frontend';
 import wixWindowFrontend from 'wix-window-frontend';
-import { authentication } from '@wix/site';
+import { authentication } from 'wix-members-frontend';
 import { exchangeHandoffToken } from 'backend/handoff.web';
 
 let initialized = false;

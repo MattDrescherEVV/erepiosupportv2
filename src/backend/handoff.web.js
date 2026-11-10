@@ -66,9 +66,9 @@ export const exchangeHandoffToken = webMethod(Permissions.Anyone, async (token) 
     }
     // Only fixed reason codes are logged; raw exception messages could carry
     // URLs, emails or other request details.
-    const KNOWN = { 'Member lookup failed': 'member_lookup_failed', 'Member blocked': 'member_blocked' };
-    const reason = error && KNOWN[error.message]
-      ? KNOWN[error.message]
+    const STEP_CODE = /^(grant|member)_[a-z_]+$/;
+    const reason = error && typeof error.message === 'string' && STEP_CODE.test(error.message)
+      ? error.message
       : `exception_${error && typeof error.name === 'string' ? error.name : 'unknown'}`;
     throw handoffFailed(reason);
   }
