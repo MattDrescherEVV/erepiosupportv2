@@ -1,10 +1,68 @@
-// API Reference: https://www.wix.com/velo/reference/api-overview/introduction
-// “Hello, World!” Example: https://learn-code.wix.com/en/article/hello-world
+import { authentication } from 'wix-members-frontend';
+import { session } from 'wix-storage-frontend';
+import wixLocationFrontend from 'wix-location-frontend';
+import wixWindowFrontend from 'wix-window-frontend';
+
+let loggingOut = false;
+let lastActivityWrite = 0;
+
+async function endHubSession() {
+  if (loggingOut) return;
+  loggingOut = true;
+
+  for (const key of ['hubStart', 'hubLastSeen']) {
+    try {
+      session.removeItem(key);
+    } catch {
+      console.error('Hub session storage unavailable');
+    }
+  }
+
+  try {
+    await authentication.logout();
+  } catch {
+    console.error('Hub session logout failed');
+  }
+  wixLocationFrontend.to('https://www.erepio.info/');
+}
+
+function recordActivity(force = false) {
+  if (loggingOut || wixLocationFrontend.path.join('/') === 'hubauth') return;
+
+  const now = Date.now();
+  try {
+    const start = Number(session.getItem('hubStart'));
+    const lastSeen = Number(session.getItem('hubLastSeen'));
+    if (authentication.loggedIn()
+      && (!Number.isFinite(start) || start <= 0 || start > now
+        || !Number.isFinite(lastSeen) || lastSeen <= 0 || lastSeen > now
+        || now - start > 2 * 60 * 60 * 1000
+        || now - lastSeen > 15 * 60 * 1000)) {
+      void endHubSession();
+      return;
+    }
+
+    if (force || now - lastActivityWrite >= 60 * 1000) {
+      session.setItem('hubLastSeen', String(now));
+      lastActivityWrite = now;
+    }
+  } catch {
+    void endHubSession();
+  }
+}
 
 $w.onReady(function () {
-    // Write your JavaScript here
+  if (wixWindowFrontend.rendering.env !== 'browser'
+    || wixLocationFrontend.path.join('/') === 'hubauth') return;
 
-    // To select an element by ID use: $w('#elementID')
+  recordActivity(true);
+  if (loggingOut) return;
 
-    // Click 'Preview' to run your code
+  $w('*').forEach(element => {
+    for (const event of ['onClick', 'onMouseIn', 'onKeyPress', 'onChange']) {
+      if (typeof element[event] === 'function') {
+        element[event](() => recordActivity());
+      }
+    }
+  });
 });
