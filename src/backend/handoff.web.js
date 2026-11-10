@@ -13,21 +13,30 @@ const handoffFailed = (reason) => {
   return new Error('Handoff failed');
 };
 
+const readHandoffSecret = async (name) => {
+  try {
+    return await elevatedGetSecretValue(name);
+  } catch {
+    throw handoffFailed(`secret_lookup_failed_${name}`);
+  }
+};
 export const exchangeHandoffToken = webMethod(Permissions.Anyone, async (token) => {
   if (typeof token !== 'string' || token.length < 20) {
     throw handoffFailed('bad_token_format');
   }
 
+  let stage = 'read_configuration';
+
   try {
-    const testEnabled = await elevatedGetSecretValue('ErepioHandoffTestEnabled');
+    const testEnabled = await readHandoffSecret('ErepioHandoffTestEnabled');
 
     if (testEnabled.value !== 'true') {
       throw handoffFailed('test_flag_not_true');
     }
 
     const [apiUrl, handoffSecret] = await Promise.all([
-      elevatedGetSecretValue('ErepioApiUrl'),
-      elevatedGetSecretValue('ErepioHandoffSecret')
+      readHandoffSecret('ErepioApiUrl'),
+      readHandoffSecret('ErepioHandoffSecret')
     ]);
 
     if (typeof apiUrl.value !== 'string' || !apiUrl.value.startsWith('https://')
@@ -35,6 +44,7 @@ export const exchangeHandoffToken = webMethod(Permissions.Anyone, async (token) 
       throw handoffFailed('bad_url_or_secret_config');
     }
 
+    stage = 'php_exchange_request';
     const response = await fetch(`${apiUrl.value.replace(/\/+$/, '')}/api/support-hub/wix/handoff/exchange`, {
       method: 'POST',
       headers: {
@@ -48,6 +58,7 @@ export const exchangeHandoffToken = webMethod(Permissions.Anyone, async (token) 
       throw handoffFailed(`php_http_${response.status}`);
     }
 
+    stage = 'php_exchange_response_json';
     const result = await response.json();
     const email = result && result.user && typeof result.user.email === 'string'
       ? result.user.email.trim().toLowerCase()
@@ -57,6 +68,7 @@ export const exchangeHandoffToken = webMethod(Permissions.Anyone, async (token) 
       throw handoffFailed('php_not_authorized_or_no_email');
     }
 
+    stage = 'wix_member_and_role_grant';
     const sessionToken = await grantHubAccess(email);
 
     return { sessionToken };
@@ -69,7 +81,7 @@ export const exchangeHandoffToken = webMethod(Permissions.Anyone, async (token) 
     const KNOWN = { 'Member lookup failed': 'member_lookup_failed', 'Member blocked': 'member_blocked' };
     const reason = error && KNOWN[error.message]
       ? KNOWN[error.message]
-      : `exception_${error && typeof error.name === 'string' ? error.name : 'unknown'}`;
+      : `${stage}_exception`;
     throw handoffFailed(reason);
   }
 });
