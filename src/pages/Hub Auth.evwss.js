@@ -29,6 +29,8 @@ $w.onReady(async function () {
     await authentication.applySessionToken(result.sessionToken);
     wixLocationFrontend.to('https://www.erepio.info/');
   } catch (error) {
-    console.error('Access denied. Please return to Erepio and use Help / Feedback to access the Support Hub.');
+    // No valid handoff: send the visitor to the Hub, where Wix's server-side
+    // role check withholds the page and shows the Restricted Access screen.
+    wixLocationFrontend.to('https://www.erepio.info/');
   }
 });
