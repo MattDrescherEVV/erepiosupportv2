@@ -1,8 +1,8 @@
 import { Permissions, webMethod } from 'wix-web-module';
 import { secrets } from 'wix-secrets-backend.v2';
-import { authentication } from 'wix-members-backend';
 import { elevate } from 'wix-auth';
 import { fetch } from 'wix-fetch';
+import { grantHubAccess } from 'backend/hubAccess';
 
 const elevatedGetSecretValue = elevate(secrets.getSecretValue);
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -53,7 +53,7 @@ export const exchangeHandoffToken = webMethod(Permissions.Anyone, async (token) 
       throw handoffFailed();
     }
 
-    const sessionToken = await authentication.generateSessionToken(email);
+    const sessionToken = await grantHubAccess(email);
 
     return { sessionToken };
   } catch (error) {
