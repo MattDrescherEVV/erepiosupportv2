@@ -7,18 +7,22 @@ import { grantHubAccess } from 'backend/hubAccess';
 const elevatedGetSecretValue = elevate(secrets.getSecretValue);
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const handoffFailed = () => new Error('Handoff failed');
+const handoffFailed = (reason) => {
+  // Logs a reason code only: never the token, secrets, or response body.
+  console.error('Handoff failed:', reason || 'unknown');
+  return new Error('Handoff failed');
+};
 
 export const exchangeHandoffToken = webMethod(Permissions.Anyone, async (token) => {
   if (typeof token !== 'string' || token.length < 20) {
-    throw handoffFailed();
+    throw handoffFailed('bad_token_format');
   }
 
   try {
     const testEnabled = await elevatedGetSecretValue('ErepioHandoffTestEnabled');
 
     if (testEnabled.value !== 'true') {
-      throw handoffFailed();
+      throw handoffFailed('test_flag_not_true');
     }
 
     const [apiUrl, handoffSecret] = await Promise.all([
@@ -28,7 +32,7 @@ export const exchangeHandoffToken = webMethod(Permissions.Anyone, async (token) 
 
     if (typeof apiUrl.value !== 'string' || !apiUrl.value.startsWith('https://')
       || typeof handoffSecret.value !== 'string' || !handoffSecret.value) {
-      throw handoffFailed();
+      throw handoffFailed('bad_url_or_secret_config');
     }
 
     const response = await fetch(`${apiUrl.value.replace(/\/+$/, '')}/api/support-hub/wix/handoff/exchange`, {
@@ -41,7 +45,7 @@ export const exchangeHandoffToken = webMethod(Permissions.Anyone, async (token) 
     });
 
     if (!response.ok) {
-      throw handoffFailed();
+      throw handoffFailed(`php_http_${response.status}`);
     }
 
     const result = await response.json();
@@ -50,13 +54,22 @@ export const exchangeHandoffToken = webMethod(Permissions.Anyone, async (token) 
       : '';
 
     if (!result || result.authorized !== true || !EMAIL_PATTERN.test(email)) {
-      throw handoffFailed();
+      throw handoffFailed('php_not_authorized_or_no_email');
     }
 
     const sessionToken = await grantHubAccess(email);
 
     return { sessionToken };
   } catch (error) {
-    throw handoffFailed();
+    if (error && error.message === 'Handoff failed') {
+      throw error;
+    }
+    // Only fixed reason codes are logged; raw exception messages could carry
+    // URLs, emails or other request details.
+    const KNOWN = { 'Member lookup failed': 'member_lookup_failed', 'Member blocked': 'member_blocked' };
+    const reason = error && KNOWN[error.message]
+      ? KNOWN[error.message]
+      : `exception_${error && typeof error.name === 'string' ? error.name : 'unknown'}`;
+    throw handoffFailed(reason);
   }
 });
