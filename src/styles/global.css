@@ -1,0 +1,63 @@
+/*
+ * erepio Brand Guide typography
+ * https://erepio-product-brand-system.replit.app/
+ *
+ * Display  Inter 700 36/40   (Heading 1 / font_0)
+ * Heading  Inter 600 24/32   (step + section headings)
+ * Body     DM Sans 400 16/24 (Paragraph 2 / font_8)
+ * Label    Inter 500 14      (eyebrows, breadcrumbs / font_9)
+ * Button   Inter 500
+ * Letter-spacing: normal everywhere.
+ */
+
+/* No tracking anywhere in text */
+.rich-text__text,
+.rich-text__text *,
+.wixui-rich-text__text,
+.wixui-rich-text__text * {
+  letter-spacing: normal !important;
+}
+
+/* Display */
+.font_0,
+.font_0 * {
+  font-family: inter, "Inter", sans-serif !important;
+  font-weight: 700 !important;
+}
+
+/* Headings */
+.font_2, .font_2 *,
+.font_3, .font_3 *,
+.font_4, .font_4 *,
+h2.font_5, h2.font_5 *,
+h3.font_5, h3.font_5 * {
+  font-family: inter, "Inter", sans-serif !important;
+  font-weight: 600 !important;
+}
+
+/* Body */
+.font_8, .font_8 * {
+  font-family: dm-sans, "DM Sans", sans-serif !important;
+  line-height: 1.5 !important;
+}
+
+/* Labels, eyebrows, breadcrumbs */
+.font_9, .font_9 * {
+  font-family: inter, "Inter", sans-serif !important;
+  font-weight: 500 !important;
+}
+
+/* Buttons */
+.button__label {
+  font-family: inter, "Inter", sans-serif !important;
+  font-weight: 500 !important;
+  letter-spacing: normal !important;
+}
+
+/* Header menu */
+.horizontal-menu__item-label,
+.menu__item-label {
+  font-family: inter, "Inter", sans-serif !important;
+  font-weight: 500 !important;
+  letter-spacing: normal !important;
+}
