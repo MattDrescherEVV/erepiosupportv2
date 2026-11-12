@@ -63,3 +63,22 @@ h3.rich-text__text[class~=font_5], h3.rich-text__text[class~=font_5] * {
   font-weight: 500 !important;
   letter-spacing: normal !important;
 }
+/* Sizes (page content only; header banner and footer keep their sizes) */
+#PAGES_CONTAINER .rich-text__text[class~=font_8],
+#PAGES_CONTAINER .rich-text__text[class~=font_8] * {
+  font-size: 16px !important;
+  line-height: 24px !important;
+}
+
+#PAGES_CONTAINER h2.rich-text__text[class~=font_5],
+#PAGES_CONTAINER h2.rich-text__text[class~=font_5] *,
+#PAGES_CONTAINER h3.rich-text__text[class~=font_5],
+#PAGES_CONTAINER h3.rich-text__text[class~=font_5] * {
+  font-size: 24px !important;
+  line-height: 32px !important;
+}
+
+#PAGES_CONTAINER .rich-text__text[class~=font_9],
+#PAGES_CONTAINER .rich-text__text[class~=font_9] * {
+  font-size: 14px !important;
+}
