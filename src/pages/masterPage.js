@@ -51,10 +51,38 @@ function recordActivity(force = false) {
   }
 }
 
+// Site paths only (e.g. "/create-a-plan"); blocks external URLs and javascript: links.
+const SAFE_PATH = /^\/[A-Za-z0-9\-_/]*$/;
+
+// Header search box (HTML embed #html2). Enter sends {erepioSearch: query};
+// we open the Help Search page with the query in the URL.
+function wireHeaderSearch() {
+  let box;
+  try {
+    box = $w('#html2');
+  } catch {
+    return;
+  }
+  if (!box || typeof box.onMessage !== 'function') return;
+
+  box.onMessage(event => {
+    const data = event && event.data;
+    if (!data || typeof data !== 'object') return;
+
+    if (typeof data.erepioSearch === 'string') {
+      const q = data.erepioSearch.trim().slice(0, 100);
+      wixLocationFrontend.to(q ? `/help-search?q=${encodeURIComponent(q)}` : '/help-search');
+    } else if (typeof data.erepioGo === 'string' && SAFE_PATH.test(data.erepioGo)) {
+      wixLocationFrontend.to(data.erepioGo);
+    }
+  });
+}
+
 $w.onReady(function () {
   if (wixWindowFrontend.rendering.env !== 'browser'
     || wixLocationFrontend.path.join('/') === 'hubauth') return;
 
+  wireHeaderSearch();
   recordActivity(true);
   if (loggingOut) return;
 
