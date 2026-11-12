@@ -62,3 +62,9 @@ h3.rich-text__text[class~="font_5"], h3.rich-text__text[class~="font_5"] * {
   font-weight: 500 !important;
   letter-spacing: normal !important;
 }
+/* selector probe (temporary) */
+.rich-text__text[class^="font_9"] { --probe-a: 1; }
+.rich-text__text[class*="font_9 "] { --probe-b: 1; }
+.rich-text__text[class*="ont_9"] { --probe-c: 1; }
+.rich-text__text[class^='font_9'] { --probe-d: 1; }
+.rich-text__text[class~=font_9] { --probe-e: 1; }
