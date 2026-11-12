@@ -9,8 +9,9 @@
  * Button   Inter 500
  * Letter-spacing: normal everywhere.
  *
- * Wix prefixes class selectors with "wixui-", so theme styles (font_N)
- * are matched with attribute selectors instead.
+ * Wix prefixes class names in this file with "wixui-" (including quoted
+ * attribute values), so theme styles are matched with UNQUOTED attribute
+ * selectors like [class~=font_9]. Keep them unquoted.
  */
 
 /* No tracking anywhere in text */
@@ -20,30 +21,30 @@
 }
 
 /* Display */
-.rich-text__text[class~="font_0"],
-.rich-text__text[class~="font_0"] * {
+.rich-text__text[class~=font_0],
+.rich-text__text[class~=font_0] * {
   font-family: inter, "Inter", sans-serif !important;
   font-weight: 700 !important;
 }
 
 /* Headings */
-.rich-text__text[class~="font_2"], .rich-text__text[class~="font_2"] *,
-.rich-text__text[class~="font_3"], .rich-text__text[class~="font_3"] *,
-.rich-text__text[class~="font_4"], .rich-text__text[class~="font_4"] *,
-h2.rich-text__text[class~="font_5"], h2.rich-text__text[class~="font_5"] *,
-h3.rich-text__text[class~="font_5"], h3.rich-text__text[class~="font_5"] * {
+.rich-text__text[class~=font_2], .rich-text__text[class~=font_2] *,
+.rich-text__text[class~=font_3], .rich-text__text[class~=font_3] *,
+.rich-text__text[class~=font_4], .rich-text__text[class~=font_4] *,
+h2.rich-text__text[class~=font_5], h2.rich-text__text[class~=font_5] *,
+h3.rich-text__text[class~=font_5], h3.rich-text__text[class~=font_5] * {
   font-family: inter, "Inter", sans-serif !important;
   font-weight: 600 !important;
 }
 
 /* Body */
-.rich-text__text[class~="font_8"], .rich-text__text[class~="font_8"] * {
+.rich-text__text[class~=font_8], .rich-text__text[class~=font_8] * {
   font-family: dm-sans, "DM Sans", sans-serif !important;
   line-height: 1.5 !important;
 }
 
 /* Labels, eyebrows, breadcrumbs */
-.rich-text__text[class~="font_9"], .rich-text__text[class~="font_9"] * {
+.rich-text__text[class~=font_9], .rich-text__text[class~=font_9] * {
   font-family: inter, "Inter", sans-serif !important;
   font-weight: 500 !important;
 }
@@ -62,9 +63,3 @@ h3.rich-text__text[class~="font_5"], h3.rich-text__text[class~="font_5"] * {
   font-weight: 500 !important;
   letter-spacing: normal !important;
 }
-/* selector probe (temporary) */
-.rich-text__text[class^="font_9"] { --probe-a: 1; }
-.rich-text__text[class*="font_9 "] { --probe-b: 1; }
-.rich-text__text[class*="ont_9"] { --probe-c: 1; }
-.rich-text__text[class^='font_9'] { --probe-d: 1; }
-.rich-text__text[class~=font_9] { --probe-e: 1; }
